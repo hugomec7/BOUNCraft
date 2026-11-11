@@ -26,6 +26,9 @@
         overshoot: {
             label: "Overshoot",
             on: "Overshoot - On",
+            // The effect plug-in (optional): one effect that holds every value.
+            plugin: { id: "com.hugomec.bouncraft.overshoot", name: "BOUNCraft Overshoot",
+                      params: { on: "On", amp: "Amplitude", freq: "Frequency", decay: "Decay", floor: "Floor" } },
             params: [
                 { key: "amp", name: "Overshoot - Amplitude", label: "Amplitude", min: 0, max: 200, def: 50, digits: 0,
                   tip: "How far it swings past the keyframe." },
@@ -50,6 +53,8 @@
         bounce: {
             label: "Bounce Back",
             on: "Bounce - On",
+            plugin: { id: "com.hugomec.bouncraft.bounce", name: "BOUNCraft Bounce Back",
+                      params: { on: "On", elast: "Elasticity", grav: "Gravity", max: "Max Bounces" } },
             params: [
                 { key: "elast", name: "Bounce - Elasticity", label: "Elasticity", min: 0, max: 100, def: 50, digits: 0,
                   tip: "How bouncy it is." },
@@ -900,14 +905,29 @@
         "}"
     ];
 
-    function overshootExpression(axis) {
+    // How an expression reads one value: from the effect plug-in when `fx` names it, otherwise
+    // from the Slider / Checkbox Control named after the value.
+    function ctl(type, key, fx) {
+        if (fx) return "effect(" + JSON.stringify(fx) + ")(" + JSON.stringify(TYPES[type].plugin.params[key]) + ")";
+        return "effect(" + JSON.stringify(controlName(type, key)) + ")(1)";
+    }
+
+    function controlName(type, key) {
+        var T = TYPES[type];
+        if (key === "on") return T.on;
+        for (var i = 0; i < T.params.length; i++) if (T.params[i].key === key) return T.params[i].name;
+        for (var j = 0; j < T.toggles.length; j++) if (T.toggles[j].key === key) return T.toggles[j].name;
+        return key;
+    }
+
+    function overshootExpression(axis, fx) {
         return [
             TAG + "Overshoot",
-            "var on = effect(\"Overshoot - On\")(1) == 1;",
-            "var amp = effect(\"Overshoot - Amplitude\")(1) / 1000;",
-            "var freq = effect(\"Overshoot - Frequency\")(1);",
-            "var decay = effect(\"Overshoot - Decay\")(1);",
-            "var floorOn = effect(\"Overshoot - Floor\")(1) == 1;",
+            "var on = " + ctl("overshoot", "on", fx) + " == 1;",
+            "var amp = " + ctl("overshoot", "amp", fx) + " / 1000;",
+            "var freq = " + ctl("overshoot", "freq", fx) + ";",
+            "var decay = " + ctl("overshoot", "decay", fx) + ";",
+            "var floorOn = " + ctl("overshoot", "floor", fx) + " == 1;",
             "var axis = " + axis + ";"
         ].concat(AXIS_LINES, [
             "var out = value;",
@@ -927,13 +947,13 @@
         ]).join("\n");
     }
 
-    function bounceExpression(axis) {
+    function bounceExpression(axis, fx) {
         return [
             TAG + "Bounce Back",
-            "var on = effect(\"Bounce - On\")(1) == 1;",
-            "var elasticity = effect(\"Bounce - Elasticity\")(1) / 100;",
-            "var gravity = effect(\"Bounce - Gravity\")(1) * 100;",
-            "var maxBounces = effect(\"Bounce - Max Bounces\")(1);",
+            "var on = " + ctl("bounce", "on", fx) + " == 1;",
+            "var elasticity = " + ctl("bounce", "elast", fx) + " / 100;",
+            "var gravity = " + ctl("bounce", "grav", fx) + " * 100;",
+            "var maxBounces = " + ctl("bounce", "max", fx) + ";",
             "var axis = " + axis + ";"
         ].concat(AXIS_LINES, [
             "var out = value;",
@@ -969,8 +989,8 @@
         ]).join("\n");
     }
 
-    function expressionFor(type, axis) {
-        return type === "overshoot" ? overshootExpression(axis) : bounceExpression(axis);
+    function expressionFor(type, axis, fx) {
+        return type === "overshoot" ? overshootExpression(axis, fx) : bounceExpression(axis, fx);
     }
 
     // The same motion in plain JavaScript, for the preview. `v` is the speed at the keyframe.
@@ -1057,35 +1077,97 @@
         return null;
     }
 
-    // Adds the controls of `type` to `layer` that aren't there yet, then sets them to `vals`.
+    // ---- the effect plug-in (optional)
+
+    var pluginCache = {};
+    function pluginInstalled(type) {
+        if (pluginCache.hasOwnProperty(type)) return pluginCache[type];
+        var ok = false;
+        try {
+            var list = app.effects;
+            for (var i = 0; i < list.length; i++) if (list[i].matchName === TYPES[type].plugin.id) ok = true;
+        } catch (e) {
+            ok = false;
+        }
+        pluginCache[type] = ok;
+        return ok;
+    }
+
+    function findPluginEffect(layer, type) {
+        var fx = layer.property("ADBE Effect Parade");
+        if (!fx) return null;
+        for (var i = 1; i <= fx.numProperties; i++) {
+            var e = fx.property(i);
+            if (e && e.matchName === TYPES[type].plugin.id) return e;
+        }
+        return null;
+    }
+
+    function hasScriptControls(layer, type) {
+        var list = controlsOf(type);
+        for (var i = 0; i < list.length; i++) if (findEffect(layer, list[i].name)) return true;
+        return false;
+    }
+
+    // Puts the controls of `type` on `layer` (adding what's missing) and sets them to `vals`.
+    // Uses the effect plug-in when it's installed, unless the layer already has the Slider /
+    // Checkbox controls. Returns the plug-in effect's name, or null for the controls.
     function setControls(layer, type, vals) {
         var fx = layer.property("ADBE Effect Parade");
         if (!fx) throw new Error("\"" + layer.name + "\" can't take effects");
+        var P = TYPES[type].plugin;
+        var e = findPluginEffect(layer, type);
+        if (!e && pluginInstalled(type) && !hasScriptControls(layer, type)) {
+            e = fx.addProperty(P.id);
+            // It only holds values: switched off, it costs nothing when the frame renders.
+            try { e.enabled = false; } catch (x) {}
+        }
+        if (e) {
+            for (var key in P.params) {
+                if (!P.params.hasOwnProperty(key)) continue;
+                var p = e.property(P.params[key]);
+                if (!p || p.numKeys > 0) continue;
+                var v = key === "on" ? 1 : vals[key];
+                p.setValue(v);
+            }
+            return e.name;
+        }
         var list = controlsOf(type);
         for (var i = 0; i < list.length; i++) {
             var c = list[i];
-            var e = findEffect(layer, c.name);
-            if (!e) {
-                e = fx.addProperty(MATCH[c.kind]);
-                e.name = c.name;
+            var ctrl = findEffect(layer, c.name);
+            if (!ctrl) {
+                ctrl = fx.addProperty(MATCH[c.kind]);
+                ctrl.name = c.name;
             }
-            var v = c.key === "on" ? 1 : vals[c.key];
-            if (c.kind === "checkbox") v = v ? 1 : 0;
-            var p = e.property(1);
-            if (p.numKeys === 0) p.setValue(v);
+            var val = c.key === "on" ? 1 : vals[c.key];
+            if (c.kind === "checkbox") val = val ? 1 : 0;
+            var prop = ctrl.property(1);
+            if (prop.numKeys === 0) prop.setValue(val);
         }
+        return null;
     }
 
-    // The values of a layer's controls of `type`, or null when it has none.
+    // The values of a layer's controls of `type` (plug-in or Slider / Checkbox), or null.
     function readControls(layer, type) {
-        var list = controlsOf(type);
         var out = {};
         var any = false;
+        var e = findPluginEffect(layer, type);
+        if (e) {
+            var P = TYPES[type].plugin.params;
+            for (var key in P) {
+                if (!P.hasOwnProperty(key) || key === "on") continue;
+                var p = e.property(P[key]);
+                if (p) { out[key] = p.value; any = true; }
+            }
+            return any ? out : null;
+        }
+        var list = controlsOf(type);
         for (var i = 0; i < list.length; i++) {
             if (list[i].key === "on") continue;
-            var e = findEffect(layer, list[i].name);
-            if (!e) continue;
-            out[list[i].key] = e.property(1).value;
+            var c = findEffect(layer, list[i].name);
+            if (!c) continue;
+            out[list[i].key] = c.property(1).value;
             any = true;
         }
         return any ? out : null;
@@ -1108,7 +1190,9 @@
 
     function isOwnControl(prop) {
         var g = prop.parentProperty;
-        return !!(g && g.isEffect && CONTROL_NAMES.hasOwnProperty(g.name));
+        if (!g || !g.isEffect) return false;
+        if (CONTROL_NAMES.hasOwnProperty(g.name)) return true;
+        return g.matchName === TYPES.overshoot.plugin.id || g.matchName === TYPES.bounce.plugin.id;
     }
 
     // Every property of `layer` (Transform and effects) that carries a BOUNCraft expression.
@@ -1147,6 +1231,11 @@
         for (var i = 0; i < list.length; i++) {
             var e = findEffect(layer, list[i].name);
             if (e) e.remove();
+        }
+        for (var guard = 0; guard < 16; guard++) {
+            var pe = findPluginEffect(layer, type);
+            if (!pe) break;
+            pe.remove();
         }
     }
 
@@ -1250,6 +1339,7 @@
         }
         var other = type === "overshoot" ? "bounce" : "overshoot";
         var done = 0;
+        var viaPlugin = 0;
         var skipped = [];
         var touched = [];
         app.beginUndoGroup(NAME + ": " + TYPES[type].label);
@@ -1261,10 +1351,11 @@
                     skipped.push(layer.name + " > " + prop.name);
                     continue;
                 }
-                setControls(layer, type, vals);
+                var fxName = setControls(layer, type, vals);
+                if (fxName) viaPlugin++;
                 // A one-dimensional property has no axis to choose.
                 var a = typeof prop.value === "number" ? -1 : axis;
-                prop.expression = expressionFor(type, a);
+                prop.expression = expressionFor(type, a, fxName);
                 prop.expressionEnabled = true;
                 done++;
                 addOnce(touched, layer);
@@ -1276,7 +1367,8 @@
         } finally {
             app.endUndoGroup();
         }
-        var report = TYPES[type].label + " on " + plural(done, "property", "properties") + ".";
+        var report = TYPES[type].label + " on " + plural(done, "property", "properties")
+            + (viaPlugin ? " (plug-in)." : ".");
         if (skipped.length) report += " Can't take an expression: " + skipped.join(", ");
         tell(report);
     }
