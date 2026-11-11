@@ -1307,7 +1307,7 @@
             times.push(t);
             values.push(post);
             if (t > last) {
-                still = sameValue(post, prop.valueAtTime(t, true), 0.001) ? still + 1 : 0;
+                still = sameValue(post, prop.valueAtTime(t, true), 0.01) ? still + 1 : 0;
                 // Settled for a quarter of a second.
                 if (still * fd >= 0.25) break;
             }
@@ -1481,6 +1481,7 @@
         var r3 = row("Preset");
         var presetList = r3.add("dropdownlist", undefined, []);
         presetList.alignment = ["fill", "center"];
+        presetList.preferredSize = [110, -1];
         var savePreset = r3.add("button", undefined, "Save");
         savePreset.preferredSize = [48, 22];
         savePreset.helpTip = "Save these values as a preset.";
@@ -1492,6 +1493,7 @@
         var nameRow = row(null);
         var nameField = nameRow.add("edittext", undefined, "");
         nameField.alignment = ["fill", "center"];
+        nameField.preferredSize = [150, -1];
         nameField.helpTip = "Preset name";
         var nameOk = nameRow.add("button", undefined, "OK");
         nameOk.preferredSize = [40, 22];
@@ -1502,8 +1504,8 @@
         // Preview of the motion: a move into a keyframe, then the bounce after it.
         var preview = win.add("group");
         preview.alignment = ["fill", "top"];
-        preview.preferredSize = [-1, 96];
-        preview.minimumSize = [200, 96];
+        preview.preferredSize = [-1, 104];
+        preview.minimumSize = [200, 104];
         preview.helpTip = "A move into a keyframe (grey), then what BOUNCraft adds after it (orange).";
 
         // Value rows, one set per type; only the current type's are shown.
@@ -1537,11 +1539,15 @@
             var f = g.add("edittext", undefined, String(state.vals[type][spec.key]));
             f.preferredSize = [46, -1];
             f.helpTip = spec.tip;
-            s.onChanging = s.onChange = function () {
+            s.onChanging = function () {
                 var v = round(s.value, spec.digits);
                 state.vals[type][spec.key] = v;
                 f.text = String(v);
                 refresh();
+            };
+            s.onChange = function () {
+                s.onChanging();
+                syncPreset();
             };
             f.onChange = function () {
                 var v = parseFloat(f.text);
@@ -1551,6 +1557,7 @@
                 f.text = String(v);
                 s.value = v;
                 refresh();
+                syncPreset();
             };
             return {
                 show: function () {
@@ -1574,6 +1581,7 @@
             c.onClick = function () {
                 state.vals[type][spec.key] = c.value ? 1 : 0;
                 refresh();
+                syncPreset();
             };
             return { show: function () { c.value = !!state.vals[type][spec.key]; } };
         }
@@ -1623,22 +1631,25 @@
             var v = unit / MOVE;
             var N = 160;
             var pts = [];
-            var lo = 0;
-            var hi = unit;
+            var peak = 0;
             for (var i = 0; i <= N; i++) {
                 var t = -MOVE + (MOVE + AFTER) * i / N;
                 var y = t < 0 ? unit * (t + MOVE) / MOVE : unit + motionAt(type, vals, v, t);
                 pts.push([t, y]);
-                if (y < lo) lo = y;
-                if (y > hi) hi = y;
+                if (t > 0 && Math.abs(y - unit) > Math.abs(peak)) peak = y - unit;
             }
-            var span = hi - lo || 1;
-            var top = 10;
-            var bottom = h - 16;
+            // Zoom in on the keyframe's value so a small bounce still shows; the move into it
+            // runs off the bottom.
+            var dev = Math.max(Math.abs(peak), unit * 0.002);
+            var lo = unit - dev * 1.6;
+            var hi = unit + dev * 1.6;
+            var span = hi - lo;
+            var top = 20;
+            var bottom = h - 8;
             var left = 8;
             var right = w - 8;
             function X(t) { return left + (right - left) * (t + MOVE) / (MOVE + AFTER); }
-            function Y(y) { return bottom - (bottom - top) * (y - lo) / span; }
+            function Y(y) { return Math.max(top - 6, Math.min(bottom + 6, bottom - (bottom - top) * (y - lo) / span)); }
 
             // Keyframe time and the keyframe's value.
             g.newPath();
@@ -1672,36 +1683,61 @@
             g.closePath();
             g.fillPath(g.newBrush(g.BrushType.SOLID_COLOR, COLORS.key));
 
-            g.drawString(PREVIEW_MOVES[which].label + " in " + MOVE + " s, then " + AFTER + " s", g.newPen(g.PenType.SOLID_COLOR, COLORS.text, 1), left, h - 14,
-                ScriptUI.newFont("dialog", "REGULAR", 10));
+            var pen = g.newPen(g.PenType.SOLID_COLOR, COLORS.text, 1);
+            var small = ScriptUI.newFont("dialog", "REGULAR", 10);
+            g.drawString(PREVIEW_MOVES[which].label + " in " + MOVE + " s", pen, left, 4, small);
+            var pct = Math.round(Math.abs(peak) / unit * 1000) / 10;
+            var txt = "peak " + pct + "%";
+            g.drawString(txt, pen, right - g.measureString(txt, small).width, 4, small);
         };
 
         // ---- presets
+        // The list shows the preset that matches the current values, or "Custom" first when
+        // none does.
         var presets = [];
+        var custom = false;
         var settingPreset = false;
-        function fillPresets(selectName) {
+        function matches(p) {
+            var vals = state.vals[state.type];
+            for (var key in vals) {
+                if (!vals.hasOwnProperty(key)) continue;
+                if (!p.v.hasOwnProperty(key) || Math.abs(Number(p.v[key]) - vals[key]) > 1e-6) return false;
+            }
+            return true;
+        }
+        function syncPreset() {
             settingPreset = true;
             presets = presetsOf(state.type);
+            var pick = -1;
+            for (var i = 0; i < presets.length && pick < 0; i++) if (matches(presets[i])) pick = i;
+            custom = pick < 0;
             presetList.removeAll();
-            var pick = 0;
-            for (var i = 0; i < presets.length; i++) {
-                presetList.add("item", presets[i].builtIn ? presets[i].name : presets[i].name + " *");
-                if (presets[i].name === selectName) pick = i;
+            if (custom) presetList.add("item", "Custom");
+            for (var j = 0; j < presets.length; j++) {
+                presetList.add("item", presets[j].builtIn ? presets[j].name : presets[j].name + " *");
             }
-            presetList.selection = pick;
-            delPreset.enabled = presets.length > 0 && !presets[pick].builtIn;
+            presetList.selection = custom ? 0 : pick;
+            delPreset.enabled = !custom && !presets[pick].builtIn;
             settingPreset = false;
         }
-        presetList.onChange = function () {
-            if (settingPreset || !presetList.selection) return;
-            var p = presets[presetList.selection.index];
-            if (!p) return;
-            delPreset.enabled = !p.builtIn;
+        function selectedPreset() {
+            if (!presetList.selection) return null;
+            var i = presetList.selection.index - (custom ? 1 : 0);
+            return i >= 0 ? presets[i] || null : null;
+        }
+        function applyPreset(p) {
             var vals = copy(state.vals[state.type]);
             for (var key in p.v) if (p.v.hasOwnProperty(key) && vals.hasOwnProperty(key)) vals[key] = Number(p.v[key]);
             state.vals[state.type] = vals;
             showValues();
             refresh();
+        }
+        presetList.onChange = function () {
+            if (settingPreset) return;
+            var p = selectedPreset();
+            if (!p) return;
+            applyPreset(p);
+            syncPreset();
         };
         savePreset.onClick = function () {
             nameField.text = "";
@@ -1736,19 +1772,18 @@
                 return;
             }
             nameRow.visible = false;
-            fillPresets(name);
+            syncPreset();
             win.layout.layout(true);
             tell("Saved preset \"" + name + "\".");
         };
         delPreset.onClick = function () {
-            if (!presetList.selection) return;
-            var p = presets[presetList.selection.index];
+            var p = selectedPreset();
             if (!p || p.builtIn) return;
             var user = loadUserPresets(state.type);
             var kept = [];
             for (var j = 0; j < user.length; j++) if (user[j] && user[j].name !== p.name) kept.push(user[j]);
             saveUserPresets(state.type, kept);
-            fillPresets("Default");
+            syncPreset();
             tell("Deleted preset \"" + p.name + "\".");
         };
 
@@ -1760,7 +1795,7 @@
 
         function showType() {
             for (var i = 0; i < TYPE_KEYS.length; i++) rows[TYPE_KEYS[i]].box.visible = TYPE_KEYS[i] === state.type;
-            fillPresets("Default");
+            syncPreset();
             showValues();
             win.layout.layout(true);
         }
