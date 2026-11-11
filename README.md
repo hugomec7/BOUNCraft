@@ -8,7 +8,7 @@ Select a layer, pick **Position**, **Scale** or **Rotation** (or **Selected** fo
 selected, including the Transform effect's), choose **Overshoot** or **Bounce Back**, and press
 **Bounce It**. BOUNCraft adds the expression and the controls to tweak it.
 
-<p align="center"><img src="images/panel.png" alt="The BOUNCraft panel" width="349"></p>
+<p align="center"><img src="images/panel.png" alt="The BOUNCraft panel" width="336"></p>
 
 *[Português abaixo](#português)*
 
@@ -19,7 +19,11 @@ selected, including the Transform effect's), choose **Overshoot** or **Bounce Ba
 
    <img src="images/install-menu.png" alt="File > Scripts > Install ScriptUI Panel..." width="440">
 
+   <img src="images/install-pick-file.png" alt="Picking BOUNCraft.jsx in the file dialog" width="560">
+
 3. Open it from the bottom of the **Window** menu (**Window ▸ BOUNCraft.jsx**). It docks like any panel.
+
+   <img src="images/window-menu.png" alt="Window > BOUNCraft.jsx" width="400">
 
 To try it without installing: **File ▸ Scripts ▸ Run Script File…** opens it as a floating window.
 
@@ -97,7 +101,12 @@ clique em **Bounce It**. O BOUNCraft coloca a expressão e os controles para aju
 2. No EffectCraft: **File ▸ Scripts ▸ Install ScriptUI Panel…** e escolha o `BOUNCraft.jsx`.
 
    <img src="images/install-menu.png" alt="File > Scripts > Install ScriptUI Panel..." width="440">
+
+   <img src="images/install-pick-file.png" alt="Escolhendo o BOUNCraft.jsx" width="560">
+
 3. Abra pelo fim do menu **Window** (**Window ▸ BOUNCraft.jsx**). Ele encaixa como qualquer painel.
+
+   <img src="images/window-menu.png" alt="Window > BOUNCraft.jsx" width="400">
 
 Para testar sem instalar: **File ▸ Scripts ▸ Run Script File…** abre como janela solta.
 
