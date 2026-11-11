@@ -76,6 +76,8 @@ To try it without installing: **File ▸ Scripts ▸ Run Script File…** opens 
    Scripts ▸ Install ScriptUI Panel…** with the `BOUNCraft.jsx` from the folder.
 4. Restart EffectCraft and open **Window ▸ BOUNCraft.jsx**.
 
+<img src="images/v2/effect-controls.png" alt="The BOUNCraft Overshoot effect in Effect Controls" width="310">
+
 With the plug-in installed, **Bounce It** adds the BOUNCraft effect. A layer that already has the
 Slider / Checkbox controls keeps them.
 
@@ -91,7 +93,7 @@ checkbox inside it to turn the bounce off.
 
 The motion starts at the last keyframe and keeps the speed the property had when it got there.
 
-<img src="images/v2/docked.png" alt="BOUNCraft docked next to other panels" width="330">
+<img src="images/v2/overview.png" alt="BOUNCraft in EffectCraft: the panel docked and floating, the effect in Effect Controls" width="800">
 
 ### Overshoot (swings like a pendulum)
 
@@ -192,6 +194,8 @@ Baixe na [última versão](../../releases/latest). São duas opções, escolha u
   EffectCraft não substitui o painel antigo sozinho). Reinicie e abra **Window ▸ BOUNCraft.jsx**.
   Os controles ficam num efeito só. Quem abrir o seu projeto em outro computador precisa do
   plug-in também.
+
+<img src="images/v2/effect-controls.png" alt="O efeito BOUNCraft Overshoot no Effect Controls" width="310">
 
 O efeito do plug-in fica com o **fx** desligado de propósito: ele só guarda os valores, a expressão
 lê assim mesmo, e desligado não pesa no render. Para desligar o bounce, use o **On** dentro dele.
