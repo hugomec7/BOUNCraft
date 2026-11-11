@@ -8,7 +8,7 @@ Select a layer, pick **Position**, **Scale** or **Rotation** (or **Selected** fo
 selected, including the Transform effect's), choose **Overshoot** or **Bounce Back**, and press
 **Bounce It**. BOUNCraft adds the expression and the controls to tweak it.
 
-<p align="center"><img src="images/v2/demo.gif" alt="BOUNCraft 2.0 demo: Overshoot on a text's Scale in EffectCraft" width="900"></p>
+<p align="center"><img src="images/v2/demo.gif" alt="BOUNCraft 2.0 demo: Overshoot on the Scale of a "BOUNCraft" text in EffectCraft" width="900"></p>
 
 *[Português abaixo](#português)*
 
@@ -242,7 +242,7 @@ Selecione uma layer, escolha **Position**, **Scale** ou **Rotation** (ou **Selec
 propriedade selecionada, inclusive as do efeito Transform), escolha **Overshoot** ou **Bounce Back** e
 clique em **Bounce It**. O BOUNCraft coloca a expressão e os controles para ajustar.
 
-<p align="center"><img src="images/v2/demo.gif" alt="Demonstração do BOUNCraft 2.0: Overshoot no Scale de um texto no EffectCraft" width="900"></p>
+<p align="center"><img src="images/v2/demo.gif" alt="Demonstração do BOUNCraft 2.0: Overshoot no Scale de um texto "BOUNCraft" no EffectCraft" width="900"></p>
 
 ### Qual versão?
 
