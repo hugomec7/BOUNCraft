@@ -51,6 +51,9 @@ Download from the [latest release](../../releases/latest). There are two version
 | Controls on the layer | one Slider / Checkbox Control per value | one effect, **BOUNCraft Overshoot** or **BOUNCraft Bounce Back**, with every value inside |
 | Opening your project on another computer | works in any EffectCraft | that computer needs the plug-in too |
 
+Prefer something simpler? [BOUNCraft 1.1](../../releases/tag/v1.1) is still there: the same
+Overshoot and Bounce Back, without the preview, presets, axis, Bake and Remove.
+
 ### Script
 
 1. In EffectCraft: **File ▸ Scripts ▸ Install ScriptUI Panel…** and pick `BOUNCraft.jsx` (it
@@ -194,6 +197,9 @@ Baixe na [última versão](../../releases/latest). São duas opções, escolha u
   EffectCraft não substitui o painel antigo sozinho). Reinicie e abra **Window ▸ BOUNCraft.jsx**.
   Os controles ficam num efeito só. Quem abrir o seu projeto em outro computador precisa do
   plug-in também.
+
+Quer algo mais simples? O [BOUNCraft 1.1](../../releases/tag/v1.1) continua disponível: o mesmo
+Overshoot e Bounce Back, sem a prévia, os presets, o eixo, o Bake e o Remove.
 
 <img src="images/v2/effect-controls.png" alt="O efeito BOUNCraft Overshoot no Effect Controls" width="310">
 
