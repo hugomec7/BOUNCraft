@@ -562,7 +562,8 @@
             ? host
             : new Window("palette", NAME + " " + VERSION, undefined, { resizeable: true });
         win.orientation = "column";
-        win.alignChildren = ["fill", "top"];
+        // Centre everything: some hosts make the window wider than its content.
+        win.alignChildren = ["center", "top"];
         win.spacing = 8;
         win.margins = 10;
 
@@ -595,9 +596,10 @@
         kind.alignment = ["fill", "center"];
 
         var go = win.add("button", undefined, "Bounce It");
+        go.preferredSize = [230, 26];
 
         status = win.add("statictext", undefined, "Select layers, then Bounce It.", { multiline: true });
-        status.alignment = ["fill", "top"];
+        status.alignment = ["center", "top"];
 
         var keys = ["position", "scale", "rotation", "selected"];
         go.onClick = function () {
