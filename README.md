@@ -1,3 +1,5 @@
+<p align="center"><img src="images/hero.png" alt="BOUNCraft — overshoot and bounce for EffectCraft"></p>
+
 # BOUNCraft
 
 Bounce and overshoot for [EffectCraft](https://github.com/storytold/effectcraft) in one click.
@@ -6,7 +8,7 @@ Select a layer, pick **Position**, **Scale** or **Rotation** (or **Selected** fo
 selected, including the Transform effect's), choose **Overshoot** or **Bounce Back**, and press
 **Bounce It**. BOUNCraft adds the expression and the controls to tweak it.
 
-<p align="center"><img src="images/panel.jpg" alt="The BOUNCraft panel" width="320"></p>
+<p align="center"><img src="images/panel.png" alt="The BOUNCraft panel" width="349"></p>
 
 *[Português abaixo](#português)*
 
@@ -15,7 +17,7 @@ selected, including the Transform effect's), choose **Overshoot** or **Bounce Ba
 1. Download `BOUNCraft.jsx` from the [latest release](../../releases/latest).
 2. In EffectCraft: **File ▸ Scripts ▸ Install ScriptUI Panel…** and pick `BOUNCraft.jsx`.
 
-   <img src="images/install-menu.jpg" alt="File > Scripts > Install ScriptUI Panel..." width="480">
+   <img src="images/install-menu.png" alt="File > Scripts > Install ScriptUI Panel..." width="440">
 
 3. Open it from the bottom of the **Window** menu (**Window ▸ BOUNCraft.jsx**). It docks like any panel.
 
@@ -28,15 +30,15 @@ To try it without installing: **File ▸ Scripts ▸ Run Script File…** opens 
 3. Pick the property and the type, then **Bounce It**.
 
 <p>
-<img src="images/panel-property.jpg" alt="Property: Position, Scale, Rotation or Selected" width="300">
-<img src="images/panel-type.jpg" alt="Type: Overshoot or Bounce Back" width="300">
+<img src="images/panel-property.png" alt="Property: Position, Scale, Rotation or Selected" width="300">
+<img src="images/panel-type.png" alt="Type: Overshoot or Bounce Back" width="300">
 </p>
 
 The motion starts at the last keyframe and keeps the speed the property had when it got there.
 
 ### Overshoot (swings like a pendulum)
 
-<img src="images/controls-overshoot.jpg" alt="Overshoot controls in Effect Controls" width="300">
+<img src="images/controls-overshoot.png" alt="Overshoot controls in Effect Controls" width="300">
 
 | Control | Default | What it does |
 |---|---|---|
@@ -47,7 +49,7 @@ The motion starts at the last keyframe and keeps the speed the property had when
 
 ### Bounce Back (bounces like a ball on the floor)
 
-<img src="images/controls-bounce-back.jpg" alt="Bounce Back controls in Effect Controls" width="300">
+<img src="images/controls-bounce-back.png" alt="Bounce Back controls in Effect Controls" width="300">
 
 | Control | Default | What it does |
 |---|---|---|
@@ -94,7 +96,7 @@ clique em **Bounce It**. O BOUNCraft coloca a expressão e os controles para aju
 1. Baixe o `BOUNCraft.jsx` na [última versão](../../releases/latest).
 2. No EffectCraft: **File ▸ Scripts ▸ Install ScriptUI Panel…** e escolha o `BOUNCraft.jsx`.
 
-   <img src="images/install-menu.jpg" alt="File > Scripts > Install ScriptUI Panel..." width="480">
+   <img src="images/install-menu.png" alt="File > Scripts > Install ScriptUI Panel..." width="440">
 3. Abra pelo fim do menu **Window** (**Window ▸ BOUNCraft.jsx**). Ele encaixa como qualquer painel.
 
 Para testar sem instalar: **File ▸ Scripts ▸ Run Script File…** abre como janela solta.
@@ -106,14 +108,14 @@ Para testar sem instalar: **File ▸ Scripts ▸ Run Script File…** abre como 
 3. Escolha a propriedade e o tipo e clique em **Bounce It**.
 
 <p>
-<img src="images/panel-property.jpg" alt="Property" width="300">
-<img src="images/panel-type.jpg" alt="Type" width="300">
+<img src="images/panel-property.png" alt="Property" width="300">
+<img src="images/panel-type.png" alt="Type" width="300">
 </p>
 
 O movimento começa no último keyframe e continua com a velocidade que a propriedade tinha ao chegar nele.
 
-<img src="images/controls-overshoot.jpg" alt="Controles do Overshoot" width="300">
-<img src="images/controls-bounce-back.jpg" alt="Controles do Bounce Back" width="300">
+<img src="images/controls-overshoot.png" alt="Controles do Overshoot" width="300">
+<img src="images/controls-bounce-back.png" alt="Controles do Bounce Back" width="300">
 
 **Overshoot** (balança como pêndulo): Amplitude (quanto passa do keyframe), Frequency (balanços por
 segundo), Decay (quanto mais alto, mais rápido para) e Floor (balança só para um lado, como se batesse
