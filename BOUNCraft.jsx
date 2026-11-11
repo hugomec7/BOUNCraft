@@ -1083,8 +1083,9 @@
         win.orientation = "column";
         // Centre everything: some hosts make the window wider than its content.
         win.alignChildren = ["center", "top"];
-        // Wide enough that a floating window doesn't add empty space on the right.
-        win.preferredSize = [320, -1];
+        // A floating window: wide enough that it doesn't add empty space on the right.
+        // A docked panel takes its dock's size instead (a fixed width there adds scrollbars).
+        if (!(host instanceof Panel)) win.preferredSize = [320, -1];
         win.spacing = 8;
         win.margins = 10;
 
