@@ -8,6 +8,8 @@ Select a layer, pick **Position**, **Scale** or **Rotation** (or **Selected** fo
 selected, including the Transform effect's), choose **Overshoot** or **Bounce Back**, and press
 **Bounce It**. BOUNCraft adds the expression and the controls to tweak it.
 
+<p align="center"><img src="images/v2/demo.gif" alt="BOUNCraft 2.0 demo: Overshoot on a text's Scale in EffectCraft" width="900"></p>
+
 *[Português abaixo](#português)*
 
 ## Which version?
@@ -86,6 +88,8 @@ To try it without installing: **File ▸ Scripts ▸ Run Script File…** opens 
 1. Unzip `BOUNCraft-2.0-Plugin.zip`.
 2. In EffectCraft: **Effect ▸ Install Effect Plug-in Bundle (Folder)…** and pick the unzipped
    `BOUNCraft` folder. It installs the two effects and the panel.
+
+   <img src="images/v2/install-plugin-menu.png" alt="Effect > Install Effect Plug-in Bundle (Folder)..." width="440">
 3. Already have an older BOUNCraft panel? EffectCraft doesn't overwrite it: also do **File ▸
    Scripts ▸ Install ScriptUI Panel…** with the `BOUNCraft.jsx` from the folder.
 4. Restart EffectCraft and open **Window ▸ BOUNCraft.jsx**.
@@ -238,6 +242,8 @@ Selecione uma layer, escolha **Position**, **Scale** ou **Rotation** (ou **Selec
 propriedade selecionada, inclusive as do efeito Transform), escolha **Overshoot** ou **Bounce Back** e
 clique em **Bounce It**. O BOUNCraft coloca a expressão e os controles para ajustar.
 
+<p align="center"><img src="images/v2/demo.gif" alt="Demonstração do BOUNCraft 2.0: Overshoot no Scale de um texto no EffectCraft" width="900"></p>
+
 ### Qual versão?
 
 São duas versões, as duas continuam disponíveis: escolha a que preferir.
@@ -290,6 +296,8 @@ Baixe na [release 2.0](../../releases/tag/v2.0). São duas formas, escolha uma:
   EffectCraft não substitui o painel antigo sozinho). Reinicie e abra **Window ▸ BOUNCraft.jsx**.
   Os controles ficam num efeito só. Quem abrir o seu projeto em outro computador precisa do
   plug-in também.
+
+  <img src="images/v2/install-plugin-menu.png" alt="Effect > Install Effect Plug-in Bundle (Folder)..." width="440">
 
 <img src="images/v2/effect-controls.png" alt="O efeito BOUNCraft Overshoot no Effect Controls" width="310">
 
