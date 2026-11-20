@@ -1197,11 +1197,12 @@
     }
 
     // Removes BOUNCraft's effects from `layer` that no BOUNCraft expression reads any more.
-    function cleanControls(layer) {
+    // `also`: properties to count as bounced even if the walk over the layer misses them.
+    function cleanControls(layer, also) {
         var fx = layer.property("ADBE Effect Parade");
         if (!fx) return;
         var used = {};
-        var props = bouncedProps(layer);
+        var props = bouncedProps(layer).concat(also || []);
         for (var i = 0; i < props.length; i++) {
             var src = "";
             try { src = props[i].expression; } catch (e) { src = ""; }
@@ -1261,13 +1262,17 @@
         return !!(g && g.isEffect && isOwnEffect(g));
     }
 
-    // Every property of `layer` (Transform and effects) that carries a BOUNCraft expression.
+    // Every property of `layer` that carries a BOUNCraft expression, wherever it is: Transform,
+    // effects, shape contents, text, masks...
     function bouncedProps(layer) {
         var out = [];
         function walk(group, depth) {
-            if (!group || depth > 6) return;
-            for (var i = 1; i <= group.numProperties; i++) {
-                var p = group.property(i);
+            if (!group || depth > 14) return;
+            var n = 0;
+            try { n = group.numProperties; } catch (e) { n = 0; }
+            for (var i = 1; i <= n; i++) {
+                var p = null;
+                try { p = group.property(i); } catch (e2) { p = null; }
                 if (!p) continue;
                 if (p.propertyType === PropertyType.PROPERTY) {
                     if (!isOwnControl(p) && bouncraftType(p)) out.push(p);
@@ -1276,8 +1281,19 @@
                 }
             }
         }
-        walk(layer.property("ADBE Transform Group"), 1);
-        walk(layer.property("ADBE Effect Parade"), 1);
+        var top = 0;
+        try { top = layer.numProperties; } catch (e) { top = 0; }
+        if (top > 0) {
+            walk(layer, 0);
+        } else {
+            // A layer that can't be walked from the top: its usual groups by name.
+            var groups = ["ADBE Transform Group", "ADBE Effect Parade", "ADBE Root Vectors Group", "ADBE Text Properties", "ADBE Mask Parade"];
+            for (var g = 0; g < groups.length; g++) {
+                var grp = null;
+                try { grp = layer.property(groups[g]); } catch (e3) { grp = null; }
+                walk(grp, 1);
+            }
+        }
         return out;
     }
 
@@ -1384,6 +1400,7 @@
         var done = 0;
         var skipped = [];
         var touched = [];
+        var applied = [];
         app.beginUndoGroup(NAME + ": " + TYPES[type].label);
         try {
             for (var i = 0; i < list.length; i++) {
@@ -1400,8 +1417,9 @@
                 prop.expressionEnabled = true;
                 done++;
                 addOnce(touched, layer);
+                applied.push(prop);
             }
-            for (var l = 0; l < touched.length; l++) cleanControls(touched[l]);
+            for (var l = 0; l < touched.length; l++) cleanControls(touched[l], applied);
         } catch (err) {
             tell("Something went wrong: " + err.message);
             return;
