@@ -13,7 +13,7 @@ for the EffectCraft community.
 | `tools/zip-README.txt` | The `README.txt` that goes in the release zip. |
 | `images/` | README images. |
 
-One version is current (2.1 today). Older ones live only in their releases.
+One version is current (2.2 today). Older ones live only in their releases.
 
 ## Rules
 

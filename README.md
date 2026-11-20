@@ -1,4 +1,4 @@
-<p align="center"><img src="images/hero.png" alt="BOUNCraft 2.1 — overshoot and bounce for EffectCraft"></p>
+<p align="center"><img src="images/hero.png" alt="BOUNCraft — overshoot and bounce for EffectCraft"></p>
 
 # BOUNCraft
 
@@ -8,6 +8,8 @@ Animate with two keyframes, select the layer, press **Bounce It**. BOUNCraft kee
 after the last keyframe, so it lands with life instead of just stopping.
 
 <p align="center"><img src="images/demo.gif" alt="BOUNCraft demo: Overshoot on the Scale of a text" width="900"></p>
+
+<p align="center"><img src="images/demo-2.gif" alt="BOUNCraft demo: a pill shape that pops in with a bounce" width="900"></p>
 
 ## What it does
 
@@ -32,7 +34,7 @@ The panel starts simple. Open **Advanced** when you want more:
 
 # INSTALL
 
-1. Download **BOUNCraft-2.1.zip** from the [latest release](../../releases/latest) and unzip it.
+1. Download **BOUNCraft-2.2.zip** from the [latest release](../../releases/latest) and unzip it.
 2. In EffectCraft: **File > Scripts > Install ScriptUI Panel...** and pick `BOUNCraft.jsx`.
 3. Restart EffectCraft and open **Window > BOUNCraft.jsx**.
 

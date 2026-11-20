@@ -1,4 +1,4 @@
-BOUNCraft 2.1 - Overshoot and bounce for EffectCraft
+BOUNCraft 2.2 - Overshoot and bounce for EffectCraft
 
 INSTALL
 1. In EffectCraft: File > Scripts > Install ScriptUI Panel... and pick BOUNCraft.jsx
