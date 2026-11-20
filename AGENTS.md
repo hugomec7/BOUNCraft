@@ -19,11 +19,20 @@ One version is current (2.1 today). Older ones live only in their releases.
 
 1. **Never write "After Effects" or "Adobe"** in issues, pull requests, release notes, the README or
    code comments. Say something like "the original BOUNCr script" or "the other app" instead.
-2. **Never rename the controls.** The expressions find them by name, so renaming breaks every layer
-   already bounced, including layers made with older versions:
-   - Slider / Checkbox Controls: `Overshoot - On`, `Overshoot - Amplitude`, `Overshoot - Frequency`,
-     `Overshoot - Decay`, `Overshoot - Floor`, `Bounce - On`, `Bounce - Elasticity`,
-     `Bounce - Gravity`, `Bounce - Max Bounces`.
+2. **Never change how the controls are named.** The expressions find them by name, so a change
+   breaks every layer already bounced:
+   - Since 2.2 every bounced property has its own controls, named `<property> - <value>`:
+     `Scale - Amplitude`, `Scale - Frequency`, `Scale - Decay`, `Scale - Floor` (only when Floor is
+     on), `Scale - Elasticity`, `Scale - Gravity`, `Scale - Max Bounces`. A property outside the
+     layer's Transform has its group's name in front (`Transform Scale Height - Amplitude`).
+   - Up to 2.1 a layer had one shared set: `Overshoot - On`, `Overshoot - Amplitude`,
+     `Overshoot - Frequency`, `Overshoot - Decay`, `Overshoot - Floor`, `Bounce - On`,
+     `Bounce - Elasticity`, `Bounce - Gravity`, `Bounce - Max Bounces`. The script no longer adds
+     them but must keep reading them (From Layer, Bake, Remove).
+   - With **Values in the expression** on, there are no controls: the values are the `var` lines
+     under `// Change the values here:` at the top of the expression. Keep that line and those
+     variable names (`amplitude`, `frequency`, `decay`, `floorOn`, `elasticity`, `gravity`,
+     `maxBounces`): From Layer reads them back.
    - The first line of every expression, `// BOUNCraft - Overshoot` or `// BOUNCraft - Bounce Back`:
      Bake and Remove find BOUNCraft's expressions by it.
 3. **No plug-in.** 2.0 shipped an optional effect plug-in (ids `com.hugomec.bouncraft.overshoot` /

@@ -48,7 +48,8 @@ Prefer to do it by hand? Copy `BOUNCraft.jsx` to this folder, then restart Effec
 2. Select the layer.
 3. Pick the property and the type, then **Bounce It**.
 
-Want to tweak it after? The values are on the layer, in **Effect Controls**.
+Want to tweak it after? The values are on the layer, in **Effect Controls**. Every property gets its
+own, named after it (`Scale - Amplitude`, `Position - Amplitude`...), so each one can bounce differently.
 
 ## Credits
 

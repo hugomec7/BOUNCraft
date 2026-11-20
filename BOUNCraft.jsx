@@ -901,25 +901,17 @@
         "}"
     ];
 
-    // How an expression reads one value: from the effect plug-in when `fx` names it, otherwise
-    // from the Slider / Checkbox Control named after the value.
-    function ctl(type, key, fx) {
-        if (fx) return "effect(" + JSON.stringify(fx) + ")(" + JSON.stringify(TYPES[type].plugin.params[key]) + ")";
-        return "effect(" + JSON.stringify(controlName(type, key)) + ")(1)";
-    }
-
-    function controlName(type, key) {
-        var T = TYPES[type];
-        if (key === "on") return T.on;
-        for (var i = 0; i < T.params.length; i++) if (T.params[i].key === key) return T.params[i].name;
-        for (var j = 0; j < T.toggles.length; j++) if (T.toggles[j].key === key) return T.toggles[j].name;
-        return key;
+    // How an expression reads one of its property's controls (see setControls).
+    function ctl(name) {
+        return "effect(" + JSON.stringify(name) + ")(1)";
     }
 
     // Second line of an expression that carries its own values instead of reading controls.
     var INLINE = "// Change the values here:";
 
-    function overshootExpression(axis, fx, inline) {
+    // `names`: the controls to read, by value key (from setControls). `inline`: the values to
+    // write into the expression itself instead.
+    function overshootExpression(axis, names, inline) {
         var head = inline ? [
             TAG + "Overshoot",
             INLINE,
@@ -935,11 +927,11 @@
             "on = on == 1;"
         ] : [
             TAG + "Overshoot",
-            "var on = " + ctl("overshoot", "on", fx) + " == 1;",
-            "var amp = " + ctl("overshoot", "amp", fx) + " / 1000;",
-            "var freq = " + ctl("overshoot", "freq", fx) + ";",
-            "var decay = " + ctl("overshoot", "decay", fx) + ";",
-            "var floorOn = " + ctl("overshoot", "floor", fx) + " == 1;"
+            "var amp = " + ctl(names.amp) + " / 1000;",
+            "var freq = " + ctl(names.freq) + ";",
+            "var decay = " + ctl(names.decay) + ";",
+            names.floor ? "var floorOn = " + ctl(names.floor) + " == 1;" : "var floorOn = false;",
+            "var on = true;"
         ];
         return head.concat([
             "var axis = " + axis + ";"
@@ -961,7 +953,7 @@
         ]).join("\n");
     }
 
-    function bounceExpression(axis, fx, inline) {
+    function bounceExpression(axis, names, inline) {
         var head = inline ? [
             TAG + "Bounce Back",
             INLINE,
@@ -975,10 +967,10 @@
             "on = on == 1;"
         ] : [
             TAG + "Bounce Back",
-            "var on = " + ctl("bounce", "on", fx) + " == 1;",
-            "var elasticity = " + ctl("bounce", "elast", fx) + " / 100;",
-            "var gravity = " + ctl("bounce", "grav", fx) + " * 100;",
-            "var maxBounces = " + ctl("bounce", "max", fx) + ";"
+            "var elasticity = " + ctl(names.elast) + " / 100;",
+            "var gravity = " + ctl(names.grav) + " * 100;",
+            "var maxBounces = " + ctl(names.max) + ";",
+            "var on = true;"
         ];
         return head.concat([
             "var axis = " + axis + ";"
@@ -1016,9 +1008,8 @@
         ]).join("\n");
     }
 
-    // `inline`: the values to write into the expression itself (no controls on the layer).
-    function expressionFor(type, axis, fx, inline) {
-        return type === "overshoot" ? overshootExpression(axis, fx, inline) : bounceExpression(axis, fx, inline);
+    function expressionFor(type, axis, names, inline) {
+        return type === "overshoot" ? overshootExpression(axis, names, inline) : bounceExpression(axis, names, inline);
     }
 
     function isInline(src) {
@@ -1126,75 +1117,128 @@
         return null;
     }
 
-    // ---- the 2.0 effect plug-in: no longer added, still read on layers that have it
+    // ---- controls: every bounced property gets its own, named after it
+    // ("Scale - Amplitude", "Scale - Frequency", "Scale - Decay"), so each can be set apart.
 
-    function findPluginEffect(layer, type) {
-        var fx = layer.property("ADBE Effect Parade");
-        if (!fx) return null;
-        for (var i = 1; i <= fx.numProperties; i++) {
-            var e = fx.property(i);
-            if (e && e.matchName === TYPES[type].plugin.id) return e;
+    // The last part of a control's name, by value key: "Amplitude", "Max Bounces"...
+    function suffixOf(type, key) {
+        var T = TYPES[type];
+        var all = T.params.concat(T.toggles);
+        for (var i = 0; i < all.length; i++) {
+            if (all[i].key === key) return all[i].name.split(" - ")[1];
         }
-        return null;
+        return key;
     }
 
-    // Puts the controls of `type` on `layer` (adding what's missing) and sets them to `vals`.
-    // A layer bounced with the 2.0 plug-in keeps using its effect. Returns that effect's name,
-    // or null for the Slider / Checkbox controls.
-    function setControls(layer, type, vals) {
+    var SUFFIXES = (function () {
+        var out = {};
+        for (var t in TYPES) {
+            var all = TYPES[t].params.concat(TYPES[t].toggles);
+            for (var i = 0; i < all.length; i++) out[all[i].name.split(" - ")[1]] = true;
+        }
+        return out;
+    })();
+
+    // What a property is called in its controls' names: "Scale" for the layer's own, with the
+    // group's name in front for any other ("Transform Scale Height", "Rectangle Path 1 Roundness").
+    function propLabel(prop) {
+        var g = prop.parentProperty;
+        if (!g || g.matchName === "ADBE Transform Group") return prop.name;
+        return g.name + " " + prop.name;
+    }
+
+    // Puts the controls of `type` for `prop` on `layer` (adding what's missing) and sets them to
+    // `vals`. Returns their names by value key. Floor only gets a control when it's on.
+    function setControls(layer, prop, type, vals) {
         var fx = layer.property("ADBE Effect Parade");
         if (!fx) throw new Error("\"" + layer.name + "\" can't take effects");
-        var P = TYPES[type].plugin;
-        var e = findPluginEffect(layer, type);
-        if (e) {
-            for (var key in P.params) {
-                if (!P.params.hasOwnProperty(key)) continue;
-                var p = e.property(P.params[key]);
-                if (!p || p.numKeys > 0) continue;
-                var v = key === "on" ? 1 : vals[key];
-                p.setValue(v);
-            }
-            return e.name;
+        var label = propLabel(prop);
+        var T = TYPES[type];
+        var names = {};
+        var specs = [];
+        for (var i = 0; i < T.params.length; i++) specs.push({ key: T.params[i].key, kind: "slider" });
+        for (var j = 0; j < T.toggles.length; j++) {
+            if (vals[T.toggles[j].key]) specs.push({ key: T.toggles[j].key, kind: "checkbox" });
         }
-        var list = controlsOf(type);
-        for (var i = 0; i < list.length; i++) {
-            var c = list[i];
-            var ctrl = findEffect(layer, c.name);
+        for (var k = 0; k < specs.length; k++) {
+            var name = label + " - " + suffixOf(type, specs[k].key);
+            var ctrl = findEffect(layer, name);
             if (!ctrl) {
-                ctrl = fx.addProperty(MATCH[c.kind]);
-                ctrl.name = c.name;
+                ctrl = fx.addProperty(MATCH[specs[k].kind]);
+                ctrl.name = name;
             }
-            var val = c.key === "on" ? 1 : vals[c.key];
-            if (c.kind === "checkbox") val = val ? 1 : 0;
-            var prop = ctrl.property(1);
-            if (prop.numKeys === 0) prop.setValue(val);
+            var value = ctrl.property(1);
+            if (value.numKeys === 0) value.setValue(specs[k].kind === "checkbox" ? 1 : vals[specs[k].key]);
+            names[specs[k].key] = name;
         }
-        return null;
+        return names;
     }
 
-    // The values of a layer's controls of `type` (plug-in or Slider / Checkbox), or null.
-    function readControls(layer, type) {
-        var out = {};
-        var any = false;
-        var e = findPluginEffect(layer, type);
-        if (e) {
-            var P = TYPES[type].plugin.params;
-            for (var key in P) {
-                if (!P.hasOwnProperty(key) || key === "on") continue;
-                var p = e.property(P[key]);
-                if (p) { out[key] = p.value; any = true; }
-            }
-            return any ? out : null;
+    // An effect BOUNCraft put on a layer: a property's control, a control of an older version
+    // (one set per layer), or the 2.0 plug-in's effect.
+    function isOwnEffect(e) {
+        if (!e) return false;
+        if (CONTROL_NAMES.hasOwnProperty(e.name)) return true;
+        if (e.matchName === TYPES.overshoot.plugin.id || e.matchName === TYPES.bounce.plugin.id) return true;
+        var at = e.name.lastIndexOf(" - ");
+        return at > 0 && SUFFIXES.hasOwnProperty(e.name.substring(at + 3));
+    }
+
+    // The effects an expression reads, by name.
+    var EFFECT_REF = /effect\("((?:[^"\\]|\\.)*)"\)/g;
+    function effectsRead(src) {
+        var out = [];
+        var m;
+        EFFECT_REF.lastIndex = 0;
+        while ((m = EFFECT_REF.exec(src)) !== null) {
+            try { out.push(JSON.parse("\"" + m[1] + "\"")); } catch (e) {}
         }
-        var list = controlsOf(type);
-        for (var i = 0; i < list.length; i++) {
-            if (list[i].key === "on") continue;
-            var c = findEffect(layer, list[i].name);
-            if (!c) continue;
-            out[list[i].key] = c.property(1).value;
-            any = true;
+        return out;
+    }
+
+    // Removes BOUNCraft's effects from `layer` that no BOUNCraft expression reads any more.
+    function cleanControls(layer) {
+        var fx = layer.property("ADBE Effect Parade");
+        if (!fx) return;
+        var used = {};
+        var props = bouncedProps(layer);
+        for (var i = 0; i < props.length; i++) {
+            var src = "";
+            try { src = props[i].expression; } catch (e) { src = ""; }
+            var names = effectsRead(src);
+            for (var n = 0; n < names.length; n++) used[names[n]] = true;
         }
-        return any ? out : null;
+        for (var k = fx.numProperties; k >= 1; k--) {
+            var e = fx.property(k);
+            if (isOwnEffect(e) && !used.hasOwnProperty(e.name)) e.remove();
+        }
+    }
+
+    // The type and values a bounced property has now: from its expression's own values, or from
+    // the controls it reads (this version's, an older one's or the plug-in's). Null if not bounced.
+    var VALUE_VARS = { amp: "amp", freq: "freq", decay: "decay", floorOn: "floor", elasticity: "elast", gravity: "grav", maxBounces: "max" };
+    function readValues(layer, prop) {
+        var src = "";
+        try { src = prop.expression; } catch (e) { src = ""; }
+        var type = typeOfExpression(src);
+        if (!type) return null;
+        if (isInline(src)) return readInline(src);
+        var vals = {};
+        if (type === "overshoot") vals.floor = 0;
+        var re = /var (\w+) = effect\("((?:[^"\\]|\\.)*)"\)\((1|"(?:[^"\\]|\\.)*")\)/g;
+        var m;
+        while ((m = re.exec(src)) !== null) {
+            var key = VALUE_VARS[m[1]];
+            if (!key) continue;
+            try {
+                var e = findEffect(layer, JSON.parse("\"" + m[2] + "\""));
+                var p = e ? (m[3] === "1" ? e.property(1) : e.property(JSON.parse(m[3]))) : null;
+                if (!p) continue;
+                var v = p.value;
+                vals[key] = v === true ? 1 : v === false ? 0 : Number(v);
+            } catch (x) {}
+        }
+        return { type: type, vals: vals };
     }
 
     // The type named by an expression BOUNCraft wrote, or null.
@@ -1214,9 +1258,7 @@
 
     function isOwnControl(prop) {
         var g = prop.parentProperty;
-        if (!g || !g.isEffect) return false;
-        if (CONTROL_NAMES.hasOwnProperty(g.name)) return true;
-        return g.matchName === TYPES.overshoot.plugin.id || g.matchName === TYPES.bounce.plugin.id;
+        return !!(g && g.isEffect && isOwnEffect(g));
     }
 
     // Every property of `layer` (Transform and effects) that carries a BOUNCraft expression.
@@ -1237,32 +1279,6 @@
         walk(layer.property("ADBE Transform Group"), 1);
         walk(layer.property("ADBE Effect Parade"), 1);
         return out;
-    }
-
-    // Is a control of `type` still used by an expression on this layer?
-    function typeInUse(layer, type) {
-        var props = bouncedProps(layer);
-        for (var i = 0; i < props.length; i++) {
-            var src = "";
-            try { src = props[i].expression; } catch (e) { src = ""; }
-            if (typeOfExpression(src) === type && !isInline(src)) return true;
-        }
-        return false;
-    }
-
-    // Removes the controls of `type` from `layer` when no expression uses them any more.
-    function removeIfUnused(layer, type) {
-        if (typeInUse(layer, type)) return;
-        var list = controlsOf(type);
-        for (var i = 0; i < list.length; i++) {
-            var e = findEffect(layer, list[i].name);
-            if (e) e.remove();
-        }
-        for (var guard = 0; guard < 16; guard++) {
-            var pe = findPluginEffect(layer, type);
-            if (!pe) break;
-            pe.remove();
-        }
     }
 
     // The layer properties a Property menu entry names, for an axis (-1 all).
@@ -1365,9 +1381,7 @@
                 : "Select one or more layers.");
             return;
         }
-        var other = type === "overshoot" ? "bounce" : "overshoot";
         var done = 0;
-        var viaPlugin = 0;
         var skipped = [];
         var touched = [];
         app.beginUndoGroup(NAME + ": " + TYPES[type].label);
@@ -1379,19 +1393,15 @@
                     skipped.push(layer.name + " > " + prop.name);
                     continue;
                 }
-                var fxName = inline ? null : setControls(layer, type, vals);
-                if (fxName) viaPlugin++;
+                var names = inline ? null : setControls(layer, prop, type, vals);
                 // A one-dimensional property has no axis to choose.
                 var a = typeof prop.value === "number" ? -1 : axis;
-                prop.expression = expressionFor(type, a, fxName, inline ? vals : null);
+                prop.expression = expressionFor(type, a, names, inline ? vals : null);
                 prop.expressionEnabled = true;
                 done++;
                 addOnce(touched, layer);
             }
-            for (var l = 0; l < touched.length; l++) {
-                removeIfUnused(touched[l], other);
-                if (inline) removeIfUnused(touched[l], type);
-            }
+            for (var l = 0; l < touched.length; l++) cleanControls(touched[l]);
         } catch (err) {
             tell("Something went wrong: " + err.message);
             return;
@@ -1399,7 +1409,7 @@
             app.endUndoGroup();
         }
         var report = TYPES[type].label + " on " + plural(done, "property", "properties")
-            + (viaPlugin ? " (plug-in)." : inline ? " (values in the expression)." : ".");
+            + (inline ? " (values in the expression)." : ".");
         if (skipped.length) report += " Can't take an expression: " + skipped.join(", ");
         tell(report);
     }
@@ -1456,10 +1466,7 @@
                 keys += bakeProp(comp, list[i].prop);
                 addOnce(touched, list[i].layer);
             }
-            for (var l = 0; l < touched.length; l++) {
-                removeIfUnused(touched[l], "overshoot");
-                removeIfUnused(touched[l], "bounce");
-            }
+            for (var l = 0; l < touched.length; l++) cleanControls(touched[l]);
         } catch (err) {
             tell("Something went wrong: " + err.message);
             return;
@@ -1484,10 +1491,7 @@
                 list[i].prop.expression = "";
                 addOnce(touched, list[i].layer);
             }
-            for (var l = 0; l < touched.length; l++) {
-                removeIfUnused(touched[l], "overshoot");
-                removeIfUnused(touched[l], "bounce");
-            }
+            for (var l = 0; l < touched.length; l++) cleanControls(touched[l]);
         } catch (err) {
             tell("Something went wrong: " + err.message);
             return;
@@ -1722,7 +1726,7 @@
         var inlinePad = inlineRow.add("statictext", undefined, "");
         inlinePad.preferredSize = [LABEL_W, -1];
         var inlineBox = inlineRow.add("checkbox", undefined, "Values in the expression");
-        inlineBox.helpTip = "Write the values into each property's expression instead of adding controls to the layer, so every property can have its own values.";
+        inlineBox.helpTip = "Write the values into each property's expression instead of adding controls to the layer.";
         try {
             inlineBox.value = app.settings.haveSetting(SETTINGS, "inline") && app.settings.getSetting(SETTINGS, "inline") === "1";
         } catch (e) {}
@@ -1738,7 +1742,7 @@
         var r4 = row(null);
         r4.alignChildren = ["fill", "center"];
         var fromLayer = r4.add("button", undefined, "From Layer");
-        fromLayer.helpTip = "Load the values from the selected layer's BOUNCraft controls.";
+        fromLayer.helpTip = "Load the values of the selected bounced property (or the layer's first one).";
         var bakeBtn = r4.add("button", undefined, "Bake");
         bakeBtn.helpTip = "Turn the bounce into keyframes and remove the expression.";
         var removeBtn = r4.add("button", undefined, "Remove");
@@ -2023,33 +2027,15 @@
                     refresh();
                     tell("Loaded " + TYPES[t].label + " values from " + from + ".");
                 }
-                // A selected property that carries its own values comes first.
-                var sel = comp.selectedProperties;
-                for (var s = 0; s < sel.length; s++) {
-                    if (sel[s].propertyType !== PropertyType.PROPERTY) continue;
-                    var src = "";
-                    try { src = sel[s].expression; } catch (e) { src = ""; }
-                    var own = readInline(src);
-                    if (own) {
-                        load(own.type, own.vals, "\"" + sel[s].name + "\"");
-                        return;
-                    }
-                }
-                for (var i = 0; i < TYPE_KEYS.length; i++) {
-                    var t = TYPE_KEYS[(i + (state.type === "bounce" ? 1 : 0)) % TYPE_KEYS.length];
-                    var got = readControls(layers[0], t);
+                // The selected bounced property, or else the layer's first one.
+                var list = bouncedTargets(comp);
+                for (var i = 0; i < list.length; i++) {
+                    var got = readValues(list[i].layer, list[i].prop);
                     if (!got) continue;
-                    var vals = copy(state.vals[t]);
-                    for (var key in got) if (got.hasOwnProperty(key)) vals[key] = round(Number(got[key]), 2);
-                    state.vals[t] = vals;
-                    state.type = t;
-                    kind.selection = t === "bounce" ? 1 : 0;
-                    showType();
-                    refresh();
-                    tell("Loaded " + TYPES[t].label + " values from \"" + layers[0].name + "\".");
+                    load(got.type, got.vals, "\"" + list[i].layer.name + "\" > " + list[i].prop.name);
                     return;
                 }
-                tell("\"" + layers[0].name + "\" has no BOUNCraft controls.");
+                tell("\"" + layers[0].name + "\" has no BOUNCraft on it.");
             } catch (err) {
                 tell("Error: " + (err && err.message ? err.message : err));
             }
