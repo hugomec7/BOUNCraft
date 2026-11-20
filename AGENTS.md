@@ -30,7 +30,7 @@ One version is current (2.1 today). Older ones live only in their releases.
    `com.hugomec.bouncraft.bounce`); it confused people and was dropped in 2.1. The script no longer
    adds those effects, but keep the code that reads them, so layers made with the plug-in still work
    with From Layer, Bake and Remove. Don't bring the plug-in back.
-4. **Simple first.** The panel opens with Property, Type and Bounce It only; everything else sits
+4. **Simple first.** The panel opens with Property, Type, Preset and Bounce It only; everything else sits
    behind **Advanced**. New options go in Advanced.
 5. **English only**: the panel, the README, the release notes and the zip's `README.txt`.
 6. **Keep the README short.** Simple words, few lines, something people actually read. The

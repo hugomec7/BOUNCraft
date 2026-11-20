@@ -3,8 +3,8 @@
  *
  * Adds an Overshoot or Bounce Back expression to Position, Scale, Rotation or the selected
  * properties of the selected layers, plus the controls for it on each layer. The panel starts
- * simple (property, type, Bounce It); "Advanced" opens the rest: a preview of the motion,
- * presets, the values, one axis only, bake into keyframes, remove.
+ * simple (property, type, preset, Bounce It); "Advanced" opens the rest: a preview of the
+ * motion, the values, your own presets, one axis only, bake into keyframes, remove.
  *
  * Install: File > Scripts > Install ScriptUI Panel..., restart, then Window > BOUNCraft.jsx.
  *
@@ -1537,14 +1537,8 @@
         kind.selection = 0;
         kind.alignment = ["fill", "center"];
 
-        // Everything between Type and Bounce It that "Advanced" shows.
-        var adv = win.add("group");
-        adv.orientation = "column";
-        adv.alignment = ["fill", "top"];
-        adv.alignChildren = ["fill", "top"];
-        adv.spacing = 6;
-
-        var r3 = row("Preset", adv);
+        // The preset list is always there; Save and Del come with "Advanced".
+        var r3 = row("Preset");
         var presetList = r3.add("dropdownlist", undefined, []);
         presetList.alignment = ["fill", "center"];
         presetList.preferredSize = [110, -1];
@@ -1554,6 +1548,13 @@
         var delPreset = r3.add("button", undefined, "Del");
         delPreset.preferredSize = [40, 22];
         delPreset.helpTip = "Delete this preset (yours only).";
+
+        // Everything between Type and Bounce It that "Advanced" shows.
+        var adv = win.add("group");
+        adv.orientation = "column";
+        adv.alignment = ["fill", "top"];
+        adv.alignChildren = ["fill", "top"];
+        adv.spacing = 6;
 
         // Shown while naming a new preset.
         var nameRow = row(null, adv);
@@ -1969,6 +1970,9 @@
             adv.visible = advanced;
             r4.visible = advanced;
             axisList.visible = advanced;
+            savePreset.visible = advanced;
+            delPreset.visible = advanced;
+            if (!advanced) nameRow.visible = false;
             win.layout.layout(true);
         }
         advBtn.onClick = function () {

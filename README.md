@@ -14,6 +14,7 @@ after the last keyframe, so it lands with life instead of just stopping.
 - **Overshoot**: swings past the keyframe and settles, like a pendulum.
 - **Bounce Back**: bounces off it, like a ball on the floor.
 - Works on **Position**, **Scale**, **Rotation**, or any property you select.
+- **Presets** to pick a feel fast: Subtle, Snappy, Rubbery, Heavy…
 
 The panel starts simple. Open **Advanced** when you want more:
 
@@ -24,7 +25,7 @@ The panel starts simple. Open **Advanced** when you want more:
 </p>
 
 - **Preview**: see the curve before you apply.
-- **Presets**: Subtle, Snappy, Rubbery, Heavy… or save your own.
+- **Values**: set every number, and save your own presets.
 - **Axis**: bounce only on X, Y or Z.
 - **Bake**: turn the bounce into normal keyframes.
 - **Remove**: take it off again.
