@@ -19,9 +19,9 @@ after the last keyframe, so it lands with life instead of just stopping.
 The panel starts simple. Open **Advanced** when you want more:
 
 <p align="center">
-<img src="images/panel-simple.png" alt="The simple panel" height="330">
+<img src="images/panel-simple.png" alt="The simple panel" width="300" valign="top">
 &nbsp;&nbsp;
-<img src="images/panel-advanced.png" alt="The panel with Advanced open" height="330">
+<img src="images/panel-advanced.png" alt="The panel with Advanced open" width="300" valign="top">
 </p>
 
 - **Preview**: see the curve before you apply.
